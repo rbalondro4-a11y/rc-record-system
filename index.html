@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RC Record System</title>
+    <title>RC Record System - Master Version</title>
     <style>
-        :root { --brand: #FF6B00; --sidebar-bg: #111111; --body-bg: #f4f6f9; --dark-btn: #2c3e50; }
+        :root { --brand: #FF6B00; --sidebar-bg: #111111; --body-bg: #f4f6f9; --dark-btn: #2c3e50; --danger: #d9534f; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; background: var(--body-bg); height: 100vh; overflow: hidden; }
 
         /* --- LOGIN --- */
@@ -30,6 +30,7 @@
         
         .sidebar-footer { border-top: 1px solid #333; padding-top: 15px; }
         .backup-btn { width: 100%; background: var(--dark-btn); color: white; border: none; padding: 10px; border-radius: 6px; margin-bottom: 8px; cursor: pointer; font-size: 13px; }
+        .logout-btn { width: 100%; background: var(--danger); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
         /* --- TABLES & CARDS --- */
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
@@ -37,7 +38,6 @@
         input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; flex: 1; min-width: 120px; }
         .save-btn { background: var(--brand); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        /* Action Buttons */
         .action-btns { position: absolute; top: 25px; right: 25px; display: flex; gap: 8px; }
         .tool-btn { padding: 6px 12px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; color: white; }
         .btn-print { background: #555; }
@@ -85,9 +85,10 @@
             <button class="nav-btn" onclick="switchTab('staff', this)">👤 Staff & Payroll</button>
         </nav>
         <div class="sidebar-footer">
-            <button class="backup-btn" onclick="exportData()">📤 Export Full Backup</button>
+            <button class="backup-btn" onclick="exportData()">📤 Export Backup</button>
             <button class="backup-btn" onclick="document.getElementById('fileIn').click()">📥 Import Data</button>
             <input type="file" id="fileIn" style="display:none" onchange="importData(this)">
+            <button class="logout-btn" onclick="handleLogout()">🚪 LOGOUT</button>
         </div>
     </aside>
 
@@ -96,7 +97,7 @@
             <div class="card print-area" id="inv-card">
                 <h3>📦 Inventory</h3>
                 <div class="action-btns">
-                    <button class="tool-btn btn-print" onclick="printSection('inv-card')">📄 Print</button>
+                    <button class="tool-btn btn-print" onclick="window.print()">📄 Print</button>
                     <button class="tool-btn btn-dl" onclick="downloadFeatureCSV('inventory')">📥 CSV</button>
                 </div>
                 <div class="input-row">
@@ -113,7 +114,7 @@
             <div class="card print-area" id="ord-card">
                 <h3>👕 Custom Orders</h3>
                 <div class="action-btns">
-                    <button class="tool-btn btn-print" onclick="printSection('ord-card')">📄 Print</button>
+                    <button class="tool-btn btn-print" onclick="window.print()">📄 Print</button>
                     <button class="tool-btn btn-dl" onclick="downloadFeatureCSV('orders')">📥 CSV</button>
                 </div>
                 <div class="input-row">
@@ -132,7 +133,7 @@
             <div class="card print-area" id="sal-card">
                 <h3>💸 Daily Sales</h3>
                 <div class="action-btns">
-                    <button class="tool-btn btn-print" onclick="printSection('sal-card')">📄 Print</button>
+                    <button class="tool-btn btn-print" onclick="window.print()">📄 Print</button>
                     <button class="tool-btn btn-dl" onclick="downloadFeatureCSV('sales')">📥 CSV</button>
                 </div>
                 <div class="input-row">
@@ -148,7 +149,7 @@
             <div class="card print-area" id="staff-card">
                 <h3>👤 Staff & Payroll</h3>
                 <div class="action-btns">
-                    <button class="tool-btn btn-print" onclick="printSection('staff-card')">📄 Print</button>
+                    <button class="tool-btn btn-print" onclick="window.print()">📄 Print</button>
                     <button class="tool-btn btn-dl" onclick="downloadFeatureCSV('staff')">📥 CSV</button>
                 </div>
                 <div class="input-row">
@@ -170,7 +171,7 @@
             <div class="card print-area" id="history-card">
                 <h3>📅 Attendance List History</h3>
                 <div class="action-btns">
-                    <button class="tool-btn btn-print" onclick="printSection('history-card')">📄 Print</button>
+                    <button class="tool-btn btn-print" onclick="window.print()">📄 Print</button>
                     <button class="tool-btn btn-dl" onclick="downloadFeatureCSV('history')">📥 CSV</button>
                 </div>
                 <table id="tbl-history">
@@ -183,9 +184,9 @@
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('RC_DB_MASTER_V1')) || { inv: [], ord: [], sal: [], staff: [], att: {} };
+    let db = JSON.parse(localStorage.getItem('RC_DATABASE_V3')) || { inv: [], ord: [], sal: [], staff: [], att: {} };
 
-    const sync = () => { localStorage.setItem('RC_DB_MASTER_V1', JSON.stringify(db)); render(); };
+    const sync = () => { localStorage.setItem('RC_DATABASE_V3', JSON.stringify(db)); render(); };
     const peso = (n) => '₱' + (n || 0).toLocaleString();
 
     function handleLogin() {
@@ -197,6 +198,13 @@
         } else { document.getElementById('login-err').innerText = "Wrong Credentials"; }
     }
 
+    function handleLogout() {
+        document.getElementById('user').value = "";
+        document.getElementById('pass').value = "";
+        document.getElementById('app-body').style.display = 'none';
+        document.getElementById('login-overlay').style.display = 'flex';
+    }
+
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
     function switchTab(id, btn) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -204,7 +212,6 @@
         document.getElementById(id).classList.add('active'); btn.classList.add('active');
     }
 
-    // Logic Functions
     function addInv() { const n = document.getElementById('p-name').value, q = parseInt(document.getElementById('p-qty').value), p = parseFloat(document.getElementById('p-price').value); if(n && q) { db.inv.push({n, q, p}); sync(); } }
     function calcOrder() { const q = parseFloat(document.getElementById('o-qty').value) || 0, u = parseFloat(document.getElementById('o-unit').value) || 0, d = parseFloat(document.getElementById('o-paid').value) || 0; document.getElementById('o-bal').innerText = peso((q * u) - d); }
     function addOrder() { const c = document.getElementById('o-client').value, q = parseInt(document.getElementById('o-qty').value), u = parseFloat(document.getElementById('o-unit').value), d = parseFloat(document.getElementById('o-paid').value) || 0; if(c && q) { db.ord.push({c, q, total: q*u, paid: d}); sync(); } }
@@ -235,7 +242,6 @@
         const iT = document.querySelector('#tbl-inv tbody'), oT = document.querySelector('#tbl-ord tbody'), sT = document.querySelector('#tbl-sales tbody'), stT = document.querySelector('#tbl-staff tbody'), hT = document.querySelector('#tbl-history tbody'), sel = document.getElementById('sale-item');
         const activeDate = document.getElementById('att-date').value;
         iT.innerHTML = ''; oT.innerHTML = ''; sT.innerHTML = ''; stT.innerHTML = ''; hT.innerHTML = ''; sel.innerHTML = '<option value="">Select...</option>';
-        
         db.inv.forEach((x, i) => { iT.innerHTML += `<tr><td>${x.n}</td><td>${x.q}</td><td>${peso(x.p)}</td><td><button onclick="db.inv.splice(${i},1);sync()">🗑️</button></td></tr>`; sel.innerHTML += `<option value="${i}">${x.n} (${x.q})</option>`; });
         db.ord.forEach((x, i) => { oT.innerHTML += `<tr><td>${x.c}</td><td>${x.q}</td><td>${peso(x.total)}</td><td>${peso(x.paid)}</td><td style="color:red">${peso(x.total-x.paid)}</td><td><button onclick="db.ord.splice(${i},1);sync()">🗑️</button></td></tr>`; });
         db.sal.forEach(x => { sT.innerHTML += `<tr><td>${x.d}</td><td>${x.n}</td><td>${x.q}</td><td>${peso(x.t)}</td></tr>`; });
@@ -246,36 +252,18 @@
         Object.keys(db.att).sort().reverse().forEach(d => { for(let name in db.att[d]) hT.innerHTML += `<tr><td>${d}</td><td>${name}</td><td><b>${db.att[d][name]}</b></td></tr>`; });
     }
 
-    function printSection(id) { window.print(); }
-
     function downloadFeatureCSV(feature) {
         let csv = "";
-        if (feature === 'inventory') {
-            csv = "Item Name,Quantity,Price\n";
-            db.inv.forEach(x => csv += `"${x.n}",${x.q},${x.p}\n`);
-        } else if (feature === 'orders') {
-            csv = "Client,Quantity,Total,Paid,Balance\n";
-            db.ord.forEach(x => csv += `"${x.c}",${x.q},${x.total},${x.paid},${x.total - x.paid}\n`);
-        } else if (feature === 'sales') {
-            csv = "Date,Item Name,Quantity,Total Sales\n";
-            db.sal.forEach(x => csv += `${x.d},"${x.n}",${x.q},${x.t}\n`);
-        } else if (feature === 'staff') {
-            csv = "Name,Daily Rate,Accrued Salary\n";
-            db.staff.forEach(x => csv += `"${x.n}",${x.r},${calculateAccrued(x.n, x.r)}\n`);
-        } else if (feature === 'history') {
-            csv = "Date,Name,Status\n";
-            Object.keys(db.att).forEach(d => { for(let n in db.att[d]) csv += `${d},"${n}",${db.att[d][n]}\n`; });
-        }
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `RC_${feature}_Report.csv`;
-        a.click();
+        if (feature === 'inventory') { csv = "Item Name,Quantity,Price\n"; db.inv.forEach(x => csv += `"${x.n}",${x.q},${x.p}\n`); }
+        else if (feature === 'orders') { csv = "Client,Quantity,Total,Paid,Balance\n"; db.ord.forEach(x => csv += `"${x.c}",${x.q},${x.total},${x.paid},${x.total - x.paid}\n`); }
+        else if (feature === 'sales') { csv = "Date,Item Name,Quantity,Total Sales\n"; db.sal.forEach(x => csv += `${x.d},"${x.n}",${x.q},${x.t}\n`); }
+        else if (feature === 'staff') { csv = "Name,Daily Rate,Accrued Salary\n"; db.staff.forEach(x => csv += `"${x.n}",${x.r},${calculateAccrued(x.n, x.r)}\n`); }
+        else if (feature === 'history') { csv = "Date,Name,Status\n"; Object.keys(db.att).forEach(d => { for(let n in db.att[d]) csv += `${d},"${n}",${db.att[d][n]}\n`; }); }
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `RC_${feature}.csv`; a.click();
     }
 
-    function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'})); a.download="RC_FULL_BACKUP.json"; a.click(); }
+    function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(db)], {type:'application/json'})); a.download="RC_BACKUP.json"; a.click(); }
     function importData(input) { const r = new FileReader(); r.onload=(e)=>{ db=JSON.parse(e.target.result); sync(); alert("Restored!"); }; r.readAsText(input.files[0]); }
 </script>
 </body>
 </html>
-
